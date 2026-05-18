@@ -5,7 +5,8 @@ from pathlib import Path
 
 def merge_dict_files(input_dir=".", output_file="dict.json"):
     """
-    Scan directory for JSONL files, extract word and translation, merge into single dict
+    Scan directory for JSONL files, extract word, sw, translation, merge into single dict
+    Each entry: {"word": "...", "sw": "...", "translation": "..."}
     """
     merged = {}
     files_processed = 0
@@ -30,6 +31,7 @@ def merge_dict_files(input_dir=".", output_file="dict.json"):
                     try:
                         entry = json.loads(line)
                         word = entry.get('word', '').strip()
+                        sw = entry.get('sw', '').strip()
                         translation = entry.get('translation', [])
 
                         if word and translation:
@@ -39,7 +41,10 @@ def merge_dict_files(input_dir=".", output_file="dict.json"):
                             else:
                                 translation_text = str(translation)
 
-                            merged[word] = translation_text
+                            merged[word] = {
+                                "sw": sw,
+                                "translation": translation_text
+                            }
 
                     except json.JSONDecodeError as e:
                         print(f"JSON decode error in {file_path} line {line_num}: {e}")

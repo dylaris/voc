@@ -6,21 +6,24 @@ import sys
 def convert_json_to_sqlite(json_path="dict.json", db_path="dict.db"):
     """
     Convert JSON dictionary file to SQLite database
+    JSON format: {"word": {"sw": "...", "translation": "..."}}
     """
     # Connect to SQLite database (creates if not exists)
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
 
-    # Create table
+    # Create table with word, sw, translation fields
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS dictionary (
             word TEXT PRIMARY KEY,
+            sw TEXT,
             translation TEXT NOT NULL
         )
     ''')
 
     # Create index for faster lookup
     cursor.execute('CREATE INDEX IF NOT EXISTS idx_word ON dictionary(word)')
+    cursor.execute('CREATE INDEX IF NOT EXISTS idx_sw ON dictionary(sw)')
 
     # Load JSON
     print(f"Loading {json_path}...")
@@ -33,12 +36,14 @@ def convert_json_to_sqlite(json_path="dict.json", db_path="dict.db"):
     batch = []
     batch_size = 10000
 
-    for i, (word, translation) in enumerate(data.items(), 1):
-        batch.append((word, translation))
+    for i, (word, info) in enumerate(data.items(), 1):
+        sw = info.get("sw", "")
+        translation = info.get("translation", "")
+        batch.append((word, sw, translation))
 
         if len(batch) >= batch_size:
             cursor.executemany(
-                "INSERT OR REPLACE INTO dictionary (word, translation) VALUES (?, ?)",
+                "INSERT OR REPLACE INTO dictionary (word, sw, translation) VALUES (?, ?, ?)",
                 batch
             )
             conn.commit()
@@ -48,7 +53,7 @@ def convert_json_to_sqlite(json_path="dict.json", db_path="dict.db"):
     # Insert remaining
     if batch:
         cursor.executemany(
-            "INSERT OR REPLACE INTO dictionary (word, translation) VALUES (?, ?)",
+            "INSERT OR REPLACE INTO dictionary (word, sw, translation) VALUES (?, ?, ?)",
             batch
         )
         conn.commit()
