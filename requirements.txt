@@ -1,4 +1,1 @@
-PySimpleGUI
-pyautogui
-pyperclip
-pynput
+pysimplegui==6.0

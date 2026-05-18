@@ -2,7 +2,7 @@
 A minimal, clean, local vocabulary dictionary tool.
 
 ## Important
-You must place `words.json` in the **same directory** as `voc.py` or `voc.exe`.
+You must place `words.json` in the **same directory** as `voc.py`.
 This file is your local word database.
 
 ## Screenshot
@@ -17,9 +17,4 @@ pip install -r requirements.txt
 2. Run the tool:
 ```console
 python voc.py
-```
-
-## Build to EXE
-```console
-pyinstaller --onefile --add-data "fonts/IosevkaTerm.ttf;fonts" --windowed voc.py
 ```
