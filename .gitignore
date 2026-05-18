@@ -1,6 +1,7 @@
 __pycache__/
 build/
+dist/
 voc.spec
-endict
+endict/
 dict.db
 dict.json

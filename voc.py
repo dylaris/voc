@@ -98,6 +98,10 @@ class Dict:
 
 class Voc:
     def __init__(self):
+        if getattr(sys, 'frozen', False):
+            self.base_path = sys._MEIPASS
+        else:
+            self.base_path = os.path.dirname(os.path.abspath(__file__))
         self.dict            = Dict()
         self.on_top          = False
         self.flashcard       = False
@@ -150,7 +154,8 @@ class Voc:
             self.window["-VAL-"].update(v, text_color=PALETTE["white"])
 
     def create_layout(self):
-        icon_data = load_icon_scaled("assets/icon.png", target_height=20),
+        icon_png_path = os.path.join(self.base_path, "assets", "icon.png")
+        icon_data = load_icon_scaled(icon_png_path, target_height=20),
         return [
             [
                sg.Image(
