@@ -8,6 +8,7 @@ import PySimpleGUI as sg
 from PIL import Image
 import io
 import base64
+import random
 
 def load_icon_scaled(png_path, target_height=20):
     img = Image.open(png_path)
@@ -73,22 +74,38 @@ class Dict:
         cursor = self.conn.cursor()
 
         # first try: search by word column
-        cursor.execute("SELECT translation FROM dictionary WHERE word = ?", (word,))
+        cursor.execute("SELECT translation, word FROM dictionary WHERE word = ?", (word,))
         result = cursor.fetchone()
+
+        if not result:
+            # second try: remove spaces and search by sw column
+            sw_word = word.replace(" ", "")
+            cursor.execute("SELECT translation, word FROM dictionary WHERE sw = ?", (sw_word,))
+            result = cursor.fetchone()
 
         if result:
-            return result[0]
+            translation, matched_word = result
+            # update frequency
+            cursor.execute("UPDATE dictionary SET freq = freq + 1 WHERE word = ?", (matched_word,))
+            self.conn.commit()
+            return translation
 
-        # second try: remove spaces and search by sw column
-        sw_word = word.replace(" ", "")
-        cursor.execute("SELECT translation FROM dictionary WHERE sw = ?", (sw_word,))
-        result = cursor.fetchone()
-
-        return result[0] if result else "not found"
+        return "not found"
 
     def pick(self):
         cursor = self.conn.cursor()
-        cursor.execute("SELECT word, translation FROM dictionary ORDER BY RANDOM() LIMIT 1")
+        cursor.execute("SELECT COUNT(*) FROM dictionary WHERE freq != 0")
+        count = cursor.fetchone()[0]  # ~1-5ms
+
+        if count == 0:
+            return ("", "not found")
+
+        offset = random.randint(0, count - 1)
+        cursor.execute(
+            "SELECT word, translation FROM dictionary WHERE freq != 0 LIMIT 1 OFFSET ?",
+            (offset,)
+        )
+
         result = cursor.fetchone()
         return (result[0], result[1]) if result else ("", "not found")
 
@@ -266,7 +283,7 @@ class Voc:
             element_justification='left',
             alpha_channel=1,
             size=(400, 120),
-            icon="assets/icon.ico",
+            icon=os.path.join(self.base_path, "assets", "icon.ico")
         )
 
     def bind_shortcuts(self):

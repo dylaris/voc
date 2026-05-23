@@ -12,12 +12,13 @@ def convert_json_to_sqlite(json_path="dict.json", db_path="dict.db"):
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
 
-    # Create table with word, sw, translation fields
+    # Create table with word, sw, translation, freq fields
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS dictionary (
             word TEXT PRIMARY KEY,
             sw TEXT,
-            translation TEXT NOT NULL
+            translation TEXT NOT NULL,
+            freq INTEGER DEFAULT 0
         )
     ''')
 
@@ -39,11 +40,11 @@ def convert_json_to_sqlite(json_path="dict.json", db_path="dict.db"):
     for i, (word, info) in enumerate(data.items(), 1):
         sw = info.get("sw", "")
         translation = info.get("translation", "")
-        batch.append((word, sw, translation))
+        batch.append((word, sw, translation, 0))
 
         if len(batch) >= batch_size:
             cursor.executemany(
-                "INSERT OR REPLACE INTO dictionary (word, sw, translation) VALUES (?, ?, ?)",
+                "INSERT OR REPLACE INTO dictionary (word, sw, translation, freq) VALUES (?, ?, ?, ?)",
                 batch
             )
             conn.commit()
@@ -53,7 +54,7 @@ def convert_json_to_sqlite(json_path="dict.json", db_path="dict.db"):
     # Insert remaining
     if batch:
         cursor.executemany(
-            "INSERT OR REPLACE INTO dictionary (word, sw, translation) VALUES (?, ?, ?)",
+            "INSERT OR REPLACE INTO dictionary (word, sw, translation, freq) VALUES (?, ?, ?, ?)",
             batch
         )
         conn.commit()
